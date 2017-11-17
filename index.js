@@ -2,17 +2,13 @@
 
 'use strict';
 
-// Lib definitions
+// libs init
 
 var program = require('commander');
 var colors = require('colors');
-
-var _ = require('lodash');
-var Q = require('q');
-
+var Q = require('bluebird');
 var fs = require('fs-extra');
 var path = require('path');
-
 var Jimp = require('jimp');
 
 // helpers
@@ -37,42 +33,42 @@ var display = {
 
 // app main variables
 
-var imageObjects;
+var g_imageObjects;
 
 // app functions
 
-function check(_settings) {
+function check(settings) {
     display.header('Checking files and directories');
 
-    return getImages(_settings)
+    return getImages(settings)
         .then((iobjs) => {
-            imageObjects = iobjs;
+            g_imageObjects = iobjs;
         })
-        .then(() => checkOutPutDir(_settings));
+        .then(() => checkOutPutDir(settings));
 
 }
 
-function getImages(_settings) {
+function getImages(settings) {
 
-    var _imageObjects = {
+    var imageObjects = {
         icon: null,
         splash: null
     };
 
-    return checkIconFile(_settings.iconfile)
+    return checkIconFile(settings.iconfile)
         .then((image) => {
-            _imageObjects.icon = image;
+            imageObjects.icon = image;
         })
-        .then(() => checkSplashFile(_settings.splashFileName))
+        .then(() => checkSplashFile(settings.splashFileName))
         .then((image) => {
-            _imageObjects.splash = image;
-            return _imageObjects;
+            imageObjects.splash = image;
+            return imageObjects;
         });
 
     function checkIconFile(iconFileName) {
         var defer = Q.defer();
 
-        Jimp.read(_settings.iconfile)
+        Jimp.read(settings.iconfile)
             .then((image) => {
                 var width = image.bitmap.width;
                 var height = image.bitmap.height;
@@ -95,7 +91,7 @@ function getImages(_settings) {
     function checkSplashFile(splashFileName) {
         var defer = Q.defer();
 
-        Jimp.read(_settings.splashfile)
+        Jimp.read(settings.splashfile)
             .then((image) => {
                 var width = image.bitmap.width;
                 var height = image.bitmap.height;
@@ -117,8 +113,8 @@ function getImages(_settings) {
 
 }
 
-function checkOutPutDir(_settings) {
-    var dir = _settings.outputdirectory;
+function checkOutPutDir(settings) {
+    var dir = settings.outputdirectory;
 
     return fs.pathExists(dir)
         .then((exists) => {
@@ -132,61 +128,68 @@ function checkOutPutDir(_settings) {
 
 }
 
-function generateForConfig(_imageObj, _settings, _config) {
-    var platformPath = path.join(_settings.outputdirectory, _config.path);
+function generateForConfig(imageObj, settings, config) {
+    var platformPath = path.join(settings.outputdirectory, config.path);
 
     var transformIcon = (definition) => {
         var defer = Q.defer();
-        var image = _imageObj.icon.clone();
+        var image = imageObj.icon.clone();
+
+        var outputFilePath = path.join(platformPath, definition.name);
 
         image.resize(definition.size, definition.size)
-            .write(path.join(platformPath, definition.name));
-
-        defer.resolve();
+            .write(outputFilePath,
+                (err) => {
+                    if (err) throw (err);
+                    //display.info('Generated icon file for ' + outputFilePath);
+                    defer.resolve();
+                });
 
         return defer.promise;
     };
 
     var transformSplash = (definition) => {
         var defer = Q.defer();
-        var image = _imageObj.splash.clone();
+        var image = imageObj.splash.clone();
 
         var x = (image.bitmap.width - definition.width) / 2;
         var y = (image.bitmap.height - definition.height) / 2;
         var width = definition.width;
         var height = definition.height;
 
+        var outputFilePath = path.join(platformPath, definition.name);
+
         image
             .crop(x, y, width, height)
-            .write(path.join(platformPath, definition.name));
-
-        defer.resolve();
+            .write(outputFilePath,
+                (err) => {
+                    if (err) throw (err);
+                    //display.info('Generated splash file for ' + outputFilePath);
+                    defer.resolve();
+                });
 
         return defer.promise;
     };
 
     return fs.ensureDir(platformPath)
         .then(() => {
-            var definitions = _config.definitions;
-            var actions = [];
-            definitions.forEach((def) => {
-                switch (_config.type) {
+            var definitions = config.definitions;
+
+            return Q.map(definitions, (def) => {
+                switch (config.type) {
                     case 'icon':
-                        actions.push(transformIcon(def));
-                        break;
+                        return transformIcon(def);
                     case 'splash':
-                        actions.push(transformSplash(def));
-                        break;
+                        return transformSplash(def);
                 }
+            }).then(() => {
+                display.success('Generated ' + config.type + ' files for ' + config.platform);
             });
-            return Q.all(actions)
-                .then(() => {
-                    display.success('Generated ' + _config.type + ' files for ' + _config.platform);
-                });
+
         });
 }
 
-function generate(_imageObj, _settings) {
+function generate(imageObj, settings) {
 
     display.header('Generating files');
 
@@ -201,12 +204,9 @@ function generate(_imageObj, _settings) {
         require('./platforms/icons/blackberry10'),
     ];
 
-    var actions = [];
-    configs.forEach((config) => {
-        actions.push(generateForConfig(_imageObj, _settings, config));
-    });
-
-    return Q.all(actions)
+    return Q.map(configs, (config) => {
+            return generateForConfig(imageObj, settings, config);
+        })
         .then(() => {
             //display.success("Successfully generated all files");
         });
@@ -219,18 +219,18 @@ function catchErrors(err) {
 }
 
 // cli helper configuration
-
+var pjson = require('./package.json');
 program
-    .version('0.1.0')
-    .description('Generates icon & splash screen for cordova/ionic projects using javascript only.')
+    .version(pjson.version)
+    .description(pjson.description)
     .option('-i, --icon [optional]', 'optional icon file path (default: resources/icon.png)')
     .option('-s, --splash [optional]', 'optional splash file path (default: resources/splash.png)')
-    .option('-o, -outputdir [optional]', 'optional output directory (default: current directory, outputs to resources/)')
+    .option('-o, -outputdir [optional]', 'optional output directory (default: current directory, outputs to \'resources\')')
     .parse(process.argv);
 
 // app settings and default values
 
-var settings = {
+var g_settings = {
     iconfile: program.icon || path.join('.', 'resources', 'icon.png'),
     splashfile: program.splash || path.join('.', 'resources', 'splash.png'),
     outputdirectory: program.outputdir || path.join('.', 'resources')
@@ -238,6 +238,6 @@ var settings = {
 
 // app entry point
 
-check(settings)
-    .then(() => generate(imageObjects, settings))
+check(g_settings)
+    .then(() => generate(g_imageObjects, g_settings))
     .catch((err) => catchErrors(err));
