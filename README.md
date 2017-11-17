@@ -2,7 +2,7 @@
 
 Automatic icon and splash screen resizing tool for **Cordova**/**ionic**/**PhoneGap** based applications.
 
-It automatically resizes and copies your ```icon.png``` and ```splash.png``` files for the **iOS**, **Android** platforms.
+It automatically resizes and copies your ```icon.png``` and ```splash.png``` files for mobile platforms.
 
 It does **NOT require** any external binary libraries. **Javascript only**.
 
@@ -27,6 +27,21 @@ or
     $ crgen
 
 ---
+
+### Platforms
+
+Supported platforms:
+
+- **iOS**
+    - icons
+    - splash
+- **Android**
+    - icons
+    - splash
+- **Blackberry 10**
+    - icons
+
+--- 
 
 ### License
 

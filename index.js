@@ -42,7 +42,7 @@ var imageObjects;
 // app functions
 
 function check(_settings) {
-    display.header('Checking image files and output directory');
+    display.header('Checking files and directories');
 
     return getImages(_settings)
         .then((iobjs) => {
@@ -76,12 +76,11 @@ function getImages(_settings) {
             .then((image) => {
                 var width = image.bitmap.width;
                 var height = image.bitmap.height;
-                display.info('Icon: ' + width + 'x' + height);
                 if (width === 1024 && width === height) {
-                    display.success('Icon file ok.')
+                    display.success('Icon file ok (' + width + 'x' + height + ')');
                     defer.resolve(image);
                 } else {
-                    display.error('Bad icon file.')
+                    display.error('Bad icon file (' + width + 'x' + height + ')');
                     defer.reject('Bad image format.');
                 }
             })
@@ -100,12 +99,11 @@ function getImages(_settings) {
             .then((image) => {
                 var width = image.bitmap.width;
                 var height = image.bitmap.height;
-                display.info('Splash: ' + width + 'x' + height);
                 if (width === 2732 && width === height) {
-                    display.success('Splash file ok.')
+                    display.success('Splash file ok (' + width + 'x' + height + ')');
                     defer.resolve(image);
                 } else {
-                    display.error('Bad splash file.')
+                    display.error('Bad splash file (' + width + 'x' + height + ')');
                     defer.reject('Bad image format.');
                 }
             })
@@ -122,15 +120,13 @@ function getImages(_settings) {
 function checkOutPutDir(_settings) {
     var dir = _settings.outputdirectory;
 
-    display.info('Output directory: ' + dir);
-
     return fs.pathExists(dir)
         .then((exists) => {
             if (exists) {
-                display.success('Output directory ok.');
+                display.success('Output directory ok. (' + dir + ')');
             } else {
-                display.error('Output directory not found.');
-                throw ('Not found: ' + dir);
+                display.error('Output directory not found. (' + dir + ')');
+                throw ('Output directory Not found: ' + dir);
             }
         });
 
