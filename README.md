@@ -38,6 +38,9 @@ Supported platforms:
 - **Android**
     - icons
     - splash
+- **Windows**
+    - icons
+    - splash
 - **Blackberry 10**
     - icons
 

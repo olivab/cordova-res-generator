@@ -200,6 +200,9 @@ function generate(imageObj, settings) {
         // ios
         require('./platforms/icons/ios'),
         require('./platforms/splash/ios'),
+        // windows
+        require('./platforms/icons/windows'),
+        require('./platforms/splash/windows'),
         // blackberry10
         require('./platforms/icons/blackberry10'),
     ];
