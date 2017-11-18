@@ -175,7 +175,7 @@ function generateForConfig(imageObj, settings, config) {
         .then(() => {
             var definitions = config.definitions;
 
-            return Q.map(definitions, (def) => {
+            return Q.mapSeries(definitions, (def) => {
                 switch (config.type) {
                     case 'icon':
                         return transformIcon(def);
@@ -204,7 +204,7 @@ function generate(imageObj, settings) {
         require('./platforms/icons/blackberry10'),
     ];
 
-    return Q.map(configs, (config) => {
+    return Q.mapSeries(configs, (config) => {
             return generateForConfig(imageObj, settings, config);
         })
         .then(() => {
