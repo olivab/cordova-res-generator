@@ -223,9 +223,9 @@ var pjson = require('./package.json');
 program
     .version(pjson.version)
     .description(pjson.description)
-    .option('-i, --icon [optional]', 'optional icon file path (default: resources/icon.png)')
-    .option('-s, --splash [optional]', 'optional splash file path (default: resources/splash.png)')
-    .option('-o, -outputdir [optional]', 'optional output directory (default: current directory, outputs to \'resources\')')
+    .option('-i, --icon [optional]', 'optional icon file path (default: ./resources/icon.png)')
+    .option('-s, --splash [optional]', 'optional splash file path (default: ./resources/splash.png)')
+    .option('-o, -outputdir [optional]', 'optional output directory (default: ./resources/)')
     .parse(process.argv);
 
 // app settings and default values
