@@ -241,6 +241,9 @@ var g_settings = {
 
 // app entry point
 
+console.log("");
+console.log("cordova-res-generator " + pjson.version);
+
 check(g_settings)
     .then(() => generate(g_imageObjects, g_settings))
     .catch((err) => catchErrors(err));
