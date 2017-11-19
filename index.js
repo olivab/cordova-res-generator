@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin / env node
 
 'use strict';
 
@@ -10,6 +10,7 @@ var Q = require('bluebird');
 var fs = require('fs-extra');
 var path = require('path');
 var Jimp = require('jimp');
+var _ = require('lodash');
 
 // helpers
 
@@ -27,25 +28,72 @@ var display = {
     },
     header: (str) => {
         console.log('');
-        console.log(str.cyan.underline);
+        console.log(str.underline);
     }
 };
 
-// app main variables
+// app main variables and constants
 
+const PLATFORMS = {
+    'android': {
+        definitions: ['./platforms/icons/android', './platforms/splash/android']
+    },
+    'ios': {
+        definitions: ['./platforms/icons/ios', './platforms/splash/ios']
+    },
+    'windows': {
+        definitions: ['./platforms/icons/windows', './platforms/splash/windows']
+    },
+    'blackberry10': {
+        definitions: ['./platforms/icons/blackberry10']
+    }
+};
 var g_imageObjects;
+var g_selectedPlatforms = [];
 
 // app functions
 
 function check(settings) {
     display.header('Checking files and directories');
 
-    return getImages(settings)
+    return checkPlatforms(settings)
+        .then((selPlatforms) => g_selectedPlatforms = selPlatforms)
+        .then(() => getImages(settings))
         .then((iobjs) => {
             g_imageObjects = iobjs;
         })
         .then(() => checkOutPutDir(settings));
 
+}
+
+function checkPlatforms(settings) {
+    var platformsKeys = _.keys(PLATFORMS);
+
+    if (!settings.platforms || typeof settings.platforms !== 'string') {
+        display.success('Processing files for all platforms');
+        return Q.resolve(platformsKeys);
+    }
+
+    var platforms = settings.platforms.split(',');
+    var platformsToProcess = [];
+    var platformsUnknown = [];
+
+    platforms.forEach(platform => {
+
+        if (_.find(platformsKeys, (p) => platform === p)) {
+            platformsToProcess.push(platform);
+        } else {
+            platformsUnknown.push(platform);
+        }
+    });
+
+    if (platformsUnknown.length > 0) {
+        display.error('Bad platforms: ' + platformsUnknown);
+        return Q.reject('Bad platforms: ' + platformsUnknown);
+    }
+
+    display.success('Processing files for: ' + platformsToProcess);
+    return Q.resolve(platformsToProcess);
 }
 
 function getImages(settings) {
@@ -193,19 +241,12 @@ function generate(imageObj, settings) {
 
     display.header('Generating files');
 
-    var configs = [
-        // android
-        require('./platforms/icons/android'),
-        require('./platforms/splash/android'),
-        // ios
-        require('./platforms/icons/ios'),
-        require('./platforms/splash/ios'),
-        // windows
-        require('./platforms/icons/windows'),
-        require('./platforms/splash/windows'),
-        // blackberry10
-        require('./platforms/icons/blackberry10'),
-    ];
+    var configs = [];
+
+    g_selectedPlatforms.forEach((platform) => {
+        PLATFORMS[platform].definitions.forEach((def) => configs.push(require(def)));
+    });
+
 
     return Q.mapSeries(configs, (config) => {
             return generateForConfig(imageObj, settings, config);
@@ -228,6 +269,7 @@ program
     .description(pjson.description)
     .option('-i, --icon [optional]', 'optional icon file path (default: ./resources/icon.png)')
     .option('-s, --splash [optional]', 'optional splash file path (default: ./resources/splash.png)')
+    .option('-p, --platforms [optional]', 'optional platform comma separated list without any space (default: all platforms processed)')
     .option('-o, -outputdir [optional]', 'optional output directory (default: ./resources/)')
     .parse(process.argv);
 
@@ -236,6 +278,7 @@ program
 var g_settings = {
     iconfile: program.icon || path.join('.', 'resources', 'icon.png'),
     splashfile: program.splash || path.join('.', 'resources', 'splash.png'),
+    platforms: program.platforms || undefined,
     outputdirectory: program.outputdir || path.join('.', 'resources')
 };
 
