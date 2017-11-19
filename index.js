@@ -31,21 +31,36 @@ var display = {
     }
 };
 
-// app main variables
+// app main variables and constants
 
+const PLATFORMS = ['android', 'ios', 'windows', 'blackberry10'];
 var g_imageObjects;
+var g_selectedPlatforms = [];
 
 // app functions
 
 function check(settings) {
     display.header('Checking files and directories');
 
-    return getImages(settings)
+    return checkPlatforms(settings)
+        .then(() => getImages(settings))
         .then((iobjs) => {
             g_imageObjects = iobjs;
         })
         .then(() => checkOutPutDir(settings));
 
+}
+
+function checkPlatforms(settings) {
+    if (!settings.platforms)
+    {
+        g_selectedPlatforms = PLATFORMS;
+        display.success('Processing files for all platforms');
+        return Q.resolve();
+    }
+
+    
+    return Q.resolve();
 }
 
 function getImages(settings) {
@@ -228,6 +243,7 @@ program
     .description(pjson.description)
     .option('-i, --icon [optional]', 'optional icon file path (default: ./resources/icon.png)')
     .option('-s, --splash [optional]', 'optional splash file path (default: ./resources/splash.png)')
+    .option('-p, --platforms [optional]', 'optional platform comma separated list without any space (default: all platforms processed)')
     .option('-o, -outputdir [optional]', 'optional output directory (default: ./resources/)')
     .parse(process.argv);
 
@@ -236,6 +252,7 @@ program
 var g_settings = {
     iconfile: program.icon || path.join('.', 'resources', 'icon.png'),
     splashfile: program.splash || path.join('.', 'resources', 'splash.png'),
+    platforms: program.platforms || undefined,
     outputdirectory: program.outputdir || path.join('.', 'resources')
 };
 
