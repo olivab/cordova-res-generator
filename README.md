@@ -1,8 +1,8 @@
 # cordova-res-generator
 
-Automatic icon and splash screen resizing tool for **Cordova**/**Ionic**/**PhoneGap** based applications.
+Automatic icon and splash screen resizing CLI tool for **Cordova**/**Ionic**/**PhoneGap** based applications.
 
-It automatically resizes and copies your ```icon.png``` and ```splash.png``` files for mobile platforms.
+It automatically resizes and copies your ```icon.png``` and ```splash.png``` files to platform dedicated directories.
 
 It does **NOT require** any external binary libraries. **Javascript only**.
 
@@ -26,16 +26,20 @@ or
 
     $ crgen
 
-### Options
+**ATTENTION:** while preserving source files, it overwrites previous output if any.
 
-  Options:
+Options:
 
     -V, --version               output the version number
-    -i, --icon [optional]       optional icon file path (default: ./resources/icon.png)
-    -s, --splash [optional]     optional splash file path (default: ./resources/splash.png)
-    -p, --platforms [optional]  optional comma separated platform token list without any space (default: all platforms processed)
-                                (available tokens: android, ios, windows, blackberry10)
-    -o, -outputdir [optional]   optional output directory (default: ./resources/)
+    -i, --icon [optional]       optional icon file path
+                                (default: ./resources/icon.png)
+    -s, --splash [optional]     optional splash file path
+                                (default: ./resources/splash.png)
+    -p, --platforms [optional]  optional platform token comma separated list
+                                available tokens: android, ios, windows, blackberry10
+                                (default: all platforms processed)
+    -o, -outputdir [optional]   optional output directory
+                                (default: ./resources/)
     -h, --help                  output usage information
 
 ---

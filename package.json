@@ -1,6 +1,6 @@
 {
     "name": "cordova-res-generator",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "Generates icon & splash screen for cordova/ionic projects using javascript only.",
     "main": "index.js",
     "preferGlobal": false,
@@ -17,11 +17,14 @@
     },
     "keywords": [
         "cordova",
+        "ionic",
+        "phonegap",
         "icon",
         "splash",
         "splashscreen",
         "generator",
-        "ionic"
+        "cli",
+        "tool"
     ],
     "author": {
         "name": "Olivab",

@@ -125,7 +125,7 @@ function getImages(settings) {
                     defer.resolve(image);
                 } else {
                     display.error('Bad icon file (' + width + 'x' + height + ')');
-                    defer.reject('Bad image format.');
+                    defer.reject('Bad image format');
                 }
             })
             .catch((err) => {
@@ -148,7 +148,7 @@ function getImages(settings) {
                     defer.resolve(image);
                 } else {
                     display.error('Bad splash file (' + width + 'x' + height + ')');
-                    defer.reject('Bad image format.');
+                    defer.reject('Bad image format');
                 }
             })
             .catch((err) => {
@@ -167,10 +167,10 @@ function checkOutPutDir(settings) {
     return fs.pathExists(dir)
         .then((exists) => {
             if (exists) {
-                display.success('Output directory ok. (' + dir + ')');
+                display.success('Output directory ok (' + dir + ')');
             } else {
-                display.error('Output directory not found. (' + dir + ')');
-                throw ('Output directory Not found: ' + dir);
+                display.error('Output directory not found (' + dir + ')');
+                throw ('Output directory not found: ' + dir);
             }
         });
 
@@ -269,7 +269,7 @@ program
     .description(pjson.description)
     .option('-i, --icon [optional]', 'optional icon file path (default: ./resources/icon.png)')
     .option('-s, --splash [optional]', 'optional splash file path (default: ./resources/splash.png)')
-    .option('-p, --platforms [optional]', 'optional platform comma separated list without any space (default: all platforms processed)')
+    .option('-p, --platforms [optional]', 'optional platform token comma separated list (default: all platforms processed)')
     .option('-o, -outputdir [optional]', 'optional output directory (default: ./resources/)')
     .parse(process.argv);
 
