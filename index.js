@@ -103,15 +103,24 @@ function getImages(settings) {
         splash: null
     };
 
-    return checkIconFile(settings.iconfile)
-        .then((image) => {
-            imageObjects.icon = image;
-        })
-        .then(() => checkSplashFile(settings.splashFileName))
-        .then((image) => {
-            imageObjects.splash = image;
-            return imageObjects;
-        });
+    var promise = Q.resolve();
+
+    if (settings.makeicon) {
+        promise = promise.then(() => checkIconFile(settings.iconfile))
+            .then((image) => {
+                imageObjects.icon = image;
+            });
+    }
+    if (settings.makesplash) {
+        promise = promise.then(() => checkSplashFile(settings.splashFileName))
+            .then((image) => {
+                imageObjects.splash = image;
+            });
+    }
+
+    return promise.then(() => {
+        return imageObjects;
+    });
 
     function checkIconFile(iconFileName) {
         var defer = Q.defer();
@@ -247,8 +256,13 @@ function generate(imageObj, settings) {
         PLATFORMS[platform].definitions.forEach((def) => configs.push(require(def)));
     });
 
+    var filteredConfigs = _.filter(configs, (config)=>{
+        if (config.type === 'icon' && settings.makeicon) return true;
+        if (config.type === 'splash' && settings.makesplash) return true;
+        return false;
+    });
 
-    return Q.mapSeries(configs, (config) => {
+    return Q.mapSeries(filteredConfigs, (config) => {
             return generateForConfig(imageObj, settings, config);
         })
         .then(() => {
@@ -271,6 +285,8 @@ program
     .option('-s, --splash [optional]', 'optional splash file path (default: ./resources/splash.png)')
     .option('-p, --platforms [optional]', 'optional platform token comma separated list (default: all platforms processed)')
     .option('-o, -outputdir [optional]', 'optional output directory (default: ./resources/)')
+    .option('-I, --makeicon [optional]', 'optional option to process icon files only')
+    .option('-S, --makesplash [optional]', 'optional option to process splash files only')
     .parse(process.argv);
 
 // app settings and default values
@@ -279,7 +295,9 @@ var g_settings = {
     iconfile: program.icon || path.join('.', 'resources', 'icon.png'),
     splashfile: program.splash || path.join('.', 'resources', 'splash.png'),
     platforms: program.platforms || undefined,
-    outputdirectory: program.outputdir || path.join('.', 'resources')
+    outputdirectory: program.outputdir || path.join('.', 'resources'),
+    makeicon: program.makeicon || (!program.makeicon && !program.makesplash) ? true : false,
+    makesplash: program.makesplash || (!program.makeicon && !program.makesplash) ? true : false
 };
 
 // app entry point
