@@ -112,7 +112,7 @@ function getImages(settings) {
             });
     }
     if (settings.makesplash) {
-        promise = promise.then(() => checkSplashFile(settings.splashFileName))
+        promise = promise.then(() => checkSplashFile(settings.splashfile))
             .then((image) => {
                 imageObjects.splash = image;
             });
@@ -125,7 +125,7 @@ function getImages(settings) {
     function checkIconFile(iconFileName) {
         var defer = Q.defer();
 
-        Jimp.read(settings.iconfile)
+        Jimp.read(iconFileName)
             .then((image) => {
                 var width = image.bitmap.width;
                 var height = image.bitmap.height;
@@ -148,7 +148,7 @@ function getImages(settings) {
     function checkSplashFile(splashFileName) {
         var defer = Q.defer();
 
-        Jimp.read(settings.splashfile)
+        Jimp.read(splashFileName)
             .then((image) => {
                 var width = image.bitmap.width;
                 var height = image.bitmap.height;
@@ -284,7 +284,7 @@ program
     .option('-i, --icon [optional]', 'optional icon file path (default: ./resources/icon.png)')
     .option('-s, --splash [optional]', 'optional splash file path (default: ./resources/splash.png)')
     .option('-p, --platforms [optional]', 'optional platform token comma separated list (default: all platforms processed)')
-    .option('-o, -outputdir [optional]', 'optional output directory (default: ./resources/)')
+    .option('-o, --outputdir [optional]', 'optional output directory (default: ./resources/)')
     .option('-I, --makeicon [optional]', 'option to process icon files only')
     .option('-S, --makesplash [optional]', 'option to process splash files only')
     .parse(process.argv);
