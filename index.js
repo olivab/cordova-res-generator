@@ -285,8 +285,8 @@ program
     .option('-s, --splash [optional]', 'optional splash file path (default: ./resources/splash.png)')
     .option('-p, --platforms [optional]', 'optional platform token comma separated list (default: all platforms processed)')
     .option('-o, -outputdir [optional]', 'optional output directory (default: ./resources/)')
-    .option('-I, --makeicon [optional]', 'optional option to process icon files only')
-    .option('-S, --makesplash [optional]', 'optional option to process splash files only')
+    .option('-I, --makeicon [optional]', 'option to process icon files only')
+    .option('-S, --makesplash [optional]', 'option to process splash files only')
     .parse(process.argv);
 
 // app settings and default values

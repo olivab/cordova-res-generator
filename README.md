@@ -40,6 +40,8 @@ Options:
                                 (default: all platforms processed)
     -o, -outputdir [optional]   optional output directory
                                 (default: ./resources/)
+    -I, --makeicon [optional]   option to process icon files only
+    -S, --makesplash [optional] option to process splash files only
     -h, --help                  output usage information
 
 ---
