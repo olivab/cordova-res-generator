@@ -69,12 +69,12 @@ function check(settings) {
 function checkPlatforms(settings) {
     var platformsKeys = _.keys(PLATFORMS);
 
-    if (!settings.platforms || typeof settings.platforms !== 'string') {
+    if (!settings.platforms || !Array.isArray(settings.platforms)) {
         display.success('Processing files for all platforms');
         return Q.resolve(platformsKeys);
     }
 
-    var platforms = settings.platforms.split(',');
+    var platforms = settings.platforms;
     var platformsToProcess = [];
     var platformsUnknown = [];
 
@@ -256,7 +256,7 @@ function generate(imageObj, settings) {
         PLATFORMS[platform].definitions.forEach((def) => configs.push(require(def)));
     });
 
-    var filteredConfigs = _.filter(configs, (config)=>{
+    var filteredConfigs = _.filter(configs, (config) => {
         if (config.type === 'icon' && settings.makeicon) return true;
         if (config.type === 'splash' && settings.makesplash) return true;
         return false;
@@ -277,13 +277,18 @@ function catchErrors(err) {
 }
 
 // cli helper configuration
+
+function processList(val) {
+    return val.split(',');
+}
+
 var pjson = require('./package.json');
 program
     .version(pjson.version)
     .description(pjson.description)
     .option('-i, --icon [optional]', 'optional icon file path (default: ./resources/icon.png)')
     .option('-s, --splash [optional]', 'optional splash file path (default: ./resources/splash.png)')
-    .option('-p, --platforms [optional]', 'optional platform token comma separated list (default: all platforms processed)')
+    .option('-p, --platforms [optional]', 'optional platform token comma separated list (default: all platforms processed)', processList)
     .option('-o, --outputdir [optional]', 'optional output directory (default: ./resources/)')
     .option('-I, --makeicon [optional]', 'option to process icon files only')
     .option('-S, --makesplash [optional]', 'option to process splash files only')
