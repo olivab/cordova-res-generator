@@ -11,6 +11,7 @@ var fs = require('fs-extra');
 var path = require('path');
 var Jimp = require('jimp');
 var _ = require('lodash');
+var Gauge = require("gauge");
 
 // helpers
 
@@ -197,7 +198,7 @@ function generateForConfig(imageObj, settings, config) {
         image.resize(definition.size, definition.size)
             .write(outputFilePath,
                 (err) => {
-                    if (err) throw (err);
+                    if (err) defer.reject(err);
                     //display.info('Generated icon file for ' + outputFilePath);
                     defer.resolve();
                 });
@@ -220,7 +221,7 @@ function generateForConfig(imageObj, settings, config) {
             .crop(x, y, width, height)
             .write(outputFilePath,
                 (err) => {
-                    if (err) throw (err);
+                    if (err) defer.reject(err);
                     //display.info('Generated splash file for ' + outputFilePath);
                     defer.resolve();
                 });
@@ -230,17 +231,37 @@ function generateForConfig(imageObj, settings, config) {
 
     return fs.ensureDir(platformPath)
         .then(() => {
+
             var definitions = config.definitions;
+            var sectionName = "Generating " + config.type + ' files for ' + config.platform;
+            var definitionCount = definitions.length;
+            var progressIndex = 0;
+
+            var gauge = new Gauge();
+            gauge.show(sectionName, 0);
 
             return Q.mapSeries(definitions, (def) => {
+                var transformPromise;
                 switch (config.type) {
                     case 'icon':
-                        return transformIcon(def);
+                        transformPromise = transformIcon(def);
+                        break;
                     case 'splash':
-                        return transformSplash(def);
+                        transformPromise = transformSplash(def);
+                        break;
                 }
+                return transformPromise.then(() => {
+                    progressIndex++;
+                    var progressRate = progressIndex / definitionCount;
+                    gauge.show(sectionName, progressRate);
+                    gauge.pulse();
+                });
             }).then(() => {
+                gauge.disable();
                 display.success('Generated ' + config.type + ' files for ' + config.platform);
+            }).catch((err) => {
+                gauge.disable();
+                throw (err);
             });
 
         });
