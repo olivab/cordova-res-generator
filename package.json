@@ -3,7 +3,7 @@
     "version": "0.4.0",
     "description": "Generates icon & splash screen for cordova/ionic projects using javascript only.",
     "main": "index.js",
-    "preferGlobal": false,
+    "preferGlobal": true,
     "bin": {
         "crgen": "./bin/crgen",
         "cordova-res-generator": "./bin/cordova-res-generator"
