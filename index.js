@@ -29,7 +29,7 @@ var display = {
     },
     header: (str) => {
         console.log('');
-        console.log(str.underline);
+        console.log(str);
     }
 };
 
@@ -328,8 +328,9 @@ var g_settings = {
 
 // app entry point
 
-console.log("");
+console.log("***************************");
 console.log("cordova-res-generator " + pjson.version);
+console.log("***************************");
 
 check(g_settings)
     .then(() => generate(g_imageObjects, g_settings))
