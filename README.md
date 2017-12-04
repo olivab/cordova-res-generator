@@ -50,6 +50,29 @@ or
 
 ---
 
+## Do yourself a favour
+
+Add to your package.json a script definition to match your file generation needs.
+This way, you won't have to type every now and again the whole command line with its options.
+
+### An example
+
+    {
+      ...
+      "scripts": {
+        ...
+          "resgen": "crgen -p android,ios"
+      }
+    }
+
+All you have to do then is type :
+
+    npm run resgen
+
+NPM will cope with typing the whole command line for you.
+
+---
+
 ## Platforms
 
 Supported platforms:
