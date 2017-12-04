@@ -241,21 +241,22 @@ function generateForConfig(imageObj, settings, config) {
             gauge.show(sectionName, 0);
 
             return Q.mapSeries(definitions, (def) => {
-                var transformPromise;
-                switch (config.type) {
-                    case 'icon':
-                        transformPromise = transformIcon(def);
-                        break;
-                    case 'splash':
-                        transformPromise = transformSplash(def);
-                        break;
-                }
-                return transformPromise.then(() => {
+                var transformPromise = Q.resolve();
+                transformPromise = transformPromise.then(() => {
                     progressIndex++;
                     var progressRate = progressIndex / definitionCount;
                     gauge.show(sectionName, progressRate);
-                    gauge.pulse();
+                    gauge.pulse(def.name);
                 });
+                switch (config.type) {
+                    case 'icon':
+                        transformPromise = transformPromise.then(() => transformIcon(def));
+                        break;
+                    case 'splash':
+                        transformPromise = transformPromise.then(() => transformSplash(def));
+                        break;
+                }
+                return transformPromise;
             }).then(() => {
                 gauge.disable();
                 display.success('Generated ' + config.type + ' files for ' + config.platform);
