@@ -1,6 +1,7 @@
 #!/usr/bin / env node
 'use strict';
 
+var display = require('./lib/displayHelper');
 var settingsManager = require('./lib/settingsManager');
 var engine = require('./lib/engine');
 
@@ -9,9 +10,9 @@ var engine = require('./lib/engine');
 function start() {
     var settings = settingsManager.makeSettings(process.argv);
 
-    console.log("***************************");
-    console.log("cordova-res-generator " + settings.version);
-    console.log("***************************");
+    display.info("***************************");
+    display.info("cordova-res-generator " + settings.version);
+    display.info("***************************");
 
     return engine.start(settings);
 }
