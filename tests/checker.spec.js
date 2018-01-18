@@ -6,7 +6,7 @@ var sinon = require('sinon');
 var checker = require('../lib/checker');
 
 // mocks
-var displayMock = require('./mock/displayMock');
+var displayMock = require('./mock/displayHelper.mock');
 
 // injected modules
 var imageManager = require('../lib/core/imageManager');
@@ -16,8 +16,8 @@ var fsManager = require('../lib/system/fsManager');
 describe('Checker', function () {
 
     describe('Calls', function () {
-        var displayStub,
-            fsManagerStub, imageManagerStub,
+        var displayStub;
+        var fsManagerStub, imageManagerStub,
             platformManagerCheckStub, platformManagerGetSelectedStub;
 
         beforeEach(function () {
@@ -134,7 +134,5 @@ describe('Checker', function () {
         });
 
     });
-
-
 
 });

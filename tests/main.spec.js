@@ -6,7 +6,7 @@ var sinon = require('sinon');
 var main = require('../lib/main');
 
 // mocks
-var displayMock = require('./mock/displayMock');
+var displayMock = require('./mock/displayHelper.mock');
 
 // injected modules
 var checker = require('../lib/checker');
@@ -15,8 +15,8 @@ var generator = require('../lib/generator');
 var settingsManager = require('../lib/core/settingsManager');
 
 describe('Main', function () {
+    var displayStub;
     var checkerCheckStub,
-        displayStub,
         generatorGenerateStub,
         errorHandlerStub,
         makeSettingsStub;
