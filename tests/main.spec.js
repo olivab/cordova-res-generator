@@ -2,40 +2,43 @@ var Q = require('bluebird');
 var assert = require('assert');
 var sinon = require('sinon');
 
+// tested module
 var main = require('../lib/main');
 
+// mocks
+var displayMock = require('./mock/displayMock');
+
+// injected modules
 var checker = require('../lib/checker');
-var display = require('../lib/system/displayHelper');
 var errorHandler = require('../lib/core/errorHandler');
 var generator = require('../lib/generator');
 var settingsManager = require('../lib/core/settingsManager');
 
-describe('Index', function () {
+describe('Main', function () {
     var checkerCheckStub,
-        displayInfoStub, displayErrorStub,
+        displayStub,
         generatorGenerateStub,
         errorHandlerStub,
         makeSettingsStub;
 
     beforeEach(function () {
+        displayStub = new displayMock.DisplayStub();
+        displayStub.stub();
         checkerCheckStub = sinon.stub(checker, 'check').returns(Q.resolve());
-        displayInfoStub = sinon.stub(display, 'info');
-        displayErrorStub = sinon.stub(display, 'error');
         generatorGenerateStub = sinon.stub(generator, 'generate').returns(Q.resolve());
         errorHandlerStub = sinon.stub(errorHandler, 'catchErrors').returns(Q.resolve());
         makeSettingsStub = sinon.stub(settingsManager, 'makeSettings').returns({});
     });
 
     afterEach(function () {
+        displayStub.restore();
         checkerCheckStub.restore();
-        displayInfoStub.restore();
-        displayErrorStub.restore();
         generatorGenerateStub.restore();
         errorHandlerStub.restore();
         makeSettingsStub.restore();
     });
 
-    it('should call checker check function', function (done) {
+    it('should call checker.check', function (done) {
         main.start()
             .then(() => {
                 assert(checkerCheckStub.called);
@@ -46,7 +49,7 @@ describe('Index', function () {
             });
     });
 
-    it('should call generator generate function', function (done) {
+    it('should call generator.generate', function (done) {
         main.start()
             .then(() => {
                 assert(generatorGenerateStub.called);
@@ -57,7 +60,7 @@ describe('Index', function () {
             });
     });
 
-    it('should not call error handling function', function (done) {
+    it('should not call errorHandler.catchErrors when no error', function (done) {
         main.start()
             .then(() => {
                 assert(errorHandlerStub.notCalled);
