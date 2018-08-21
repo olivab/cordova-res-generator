@@ -9,9 +9,9 @@ var colors = require('colors');
 var Q = require('bluebird');
 var fs = require('fs-extra');
 var path = require('path');
-var Jimp = require('jimp');
 var _ = require('lodash');
 var Gauge = require("gauge");
+var sharp = require('sharp');
 
 // helpers
 
@@ -124,49 +124,33 @@ function getImages(settings) {
     });
 
     function checkIconFile(iconFileName) {
-        var defer = Q.defer();
-
-        Jimp.read(iconFileName)
-            .then((image) => {
-                var width = image.bitmap.width;
-                var height = image.bitmap.height;
-                if (width === 1024 && width === height) {
-                    display.success('Icon file ok (' + width + 'x' + height + ')');
-                    defer.resolve(image);
-                } else {
-                    display.error('Bad icon file (' + width + 'x' + height + ')');
-                    defer.reject('Bad image format');
-                }
-            })
-            .catch((err) => {
-                display.error('Could not load icon file');
-                defer.reject(err);
-            });
-
-        return defer.promise;
+      const result = sharp(iconFileName);
+      return result.metadata()
+      .then((image) => {
+        if (image.width === image.height && (image.format === 'svg' || image.width >= 1024)) {
+          result.__meta = image;
+          display.success('Icon file ok (' + image.width + 'x' + image.height + ')');
+        } else {
+          display.error('Bad icon file (' + image.width + 'x' + image.height + ')');
+          throw new Error('Bad image format');
+        }
+        return result;
+      })
     }
 
     function checkSplashFile(splashFileName) {
-        var defer = Q.defer();
-
-        Jimp.read(splashFileName)
-            .then((image) => {
-                var width = image.bitmap.width;
-                var height = image.bitmap.height;
-                if (width === 2732 && width === height) {
-                    display.success('Splash file ok (' + width + 'x' + height + ')');
-                    defer.resolve(image);
-                } else {
-                    display.error('Bad splash file (' + width + 'x' + height + ')');
-                    defer.reject('Bad image format');
-                }
-            })
-            .catch((err) => {
-                display.error('Could not load splash file');
-                defer.reject(err);
-            });
-
-        return defer.promise;
+      const result = sharp(splashFileName);
+      return result.metadata()
+      .then((image) => {
+        if (image.width === image.height && (image.format === 'svg' || image.width >= 2732)) {
+          result.__meta = image;
+          display.success('splash file ok (' + image.width + 'x' + image.height + ')');
+        } else {
+          display.error('Bad splash file (' + image.width + 'x' + image.height + ')');
+          throw new Error('Bad image format');
+        }
+        return result;
+      })
     }
 
 }
@@ -190,43 +174,31 @@ function generateForConfig(imageObj, settings, config) {
     var platformPath = path.join(settings.outputdirectory, config.path);
 
     var transformIcon = (definition) => {
-        var defer = Q.defer();
-        var image = imageObj.icon.clone();
+      var image = imageObj.icon;
 
-        var outputFilePath = path.join(platformPath, definition.name);
-
-        image.resize(definition.size, definition.size)
-            .write(outputFilePath,
-                (err) => {
-                    if (err) defer.reject(err);
-                    //display.info('Generated icon file for ' + outputFilePath);
-                    defer.resolve();
-                });
-
-        return defer.promise;
+      var outputFilePath = path.join(platformPath, definition.name);
+      var outDir = path.dirname(outputFilePath);
+      return fs.ensureDir(outDir).then(()=>{
+        return image.resize(definition.size, definition.size)
+        .toFile(outputFilePath);
+      })
     };
 
     var transformSplash = (definition) => {
-        var defer = Q.defer();
-        var image = imageObj.splash.clone();
+        var image = imageObj.splash;
 
-        var x = (image.bitmap.width - definition.width) / 2;
-        var y = (image.bitmap.height - definition.height) / 2;
+        var x = (image.__meta.width - definition.width) / 2;
+        var y = (image.__meta.height - definition.height) / 2;
         var width = definition.width;
         var height = definition.height;
 
         var outputFilePath = path.join(platformPath, definition.name);
-
-        image
-            .crop(x, y, width, height)
-            .write(outputFilePath,
-                (err) => {
-                    if (err) defer.reject(err);
-                    //display.info('Generated splash file for ' + outputFilePath);
-                    defer.resolve();
-                });
-
-        return defer.promise;
+        var outDir = path.dirname(outputFilePath);
+        return fs.ensureDir(outDir).then(()=>{
+          return image.resize(width, height)
+          .crop(sharp.strategy.entropy)
+          .toFile(outputFilePath)
+        })
     };
 
     return fs.ensureDir(platformPath)
