@@ -9,9 +9,19 @@ var colors = require('colors');
 var Q = require('bluebird');
 var fs = require('fs-extra');
 var path = require('path');
-var Jimp = require('jimp');
 var _ = require('lodash');
 var Gauge = require("gauge");
+var sharp = require('sharp');
+
+const IMAGE_FORMATS = ['svg', 'webp', 'png', 'tif', 'tiff', 'dzi', 'szi', 'v', 'vips', 'jpg', 'jpeg'];
+
+function isSupportedFormat(aFileName) {
+  let vExt = path.extname(aFileName);
+  if (vExt && vExt.length >= 2) {
+    vExt = vExt.slice(1).toLowerCase();
+    return IMAGE_FORMATS.indexOf(vExt) !== -1;
+  }
+}
 
 // helpers
 
@@ -54,8 +64,40 @@ var g_selectedPlatforms = [];
 
 // app functions
 
+function getValidFileName(aFileName) {
+  var result;
+  var ext = path.extname(aFileName);
+  if (ext.length > 1) {
+    if (!isSupportedFormat(aFileName)) {
+      throw new Error(aFileName + ' is not supported image format!');
+    }
+    if (fs.existsSync(path.resolve(aFileName))) result = aFileName;
+  } else {
+    if (ext.length === 1) aFileName = aFileName.slice(0, aFileName.length-2);
+    for (let i = 0; i < IMAGE_FORMATS.length; i++) {
+      if (fs.existsSync(path.resolve(aFileName+'.'+IMAGE_FORMATS[i]))) {
+        result = aFileName+'.'+IMAGE_FORMATS[i];
+        break;
+      }
+    }
+  }
+  if (!result) throw new Error(aFileName + ' no such file.');
+  return result;
+}
+
 function check(settings) {
     display.header('Checking files and directories');
+
+    var vFile;
+    try {
+      vFile = getValidFileName(settings.iconfile);
+      settings.iconfile = vFile;
+
+      vFile = getValidFileName(settings.splashfile);
+      settings.splashfile = vFile;
+    } catch(err) {
+      catchErrors(err);
+    }
 
     return checkPlatforms(settings)
         .then((selPlatforms) => g_selectedPlatforms = selPlatforms)
@@ -124,49 +166,33 @@ function getImages(settings) {
     });
 
     function checkIconFile(iconFileName) {
-        var defer = Q.defer();
-
-        Jimp.read(iconFileName)
-            .then((image) => {
-                var width = image.bitmap.width;
-                var height = image.bitmap.height;
-                if (width === 1024 && width === height) {
-                    display.success('Icon file ok (' + width + 'x' + height + ')');
-                    defer.resolve(image);
-                } else {
-                    display.error('Bad icon file (' + width + 'x' + height + ')');
-                    defer.reject('Bad image format');
-                }
-            })
-            .catch((err) => {
-                display.error('Could not load icon file');
-                defer.reject(err);
-            });
-
-        return defer.promise;
+      const result = sharp(iconFileName);
+      return result.metadata()
+      .then((image) => {
+        if (image.width === image.height && (image.format === 'svg' || image.width >= 1024)) {
+          result.__meta = image;
+          display.success('Icon file ok (' + image.width + 'x' + image.height + ')');
+        } else {
+          display.error('Bad icon file (' + image.width + 'x' + image.height + ')');
+          throw new Error('Bad image format');
+        }
+        return result;
+      })
     }
 
     function checkSplashFile(splashFileName) {
-        var defer = Q.defer();
-
-        Jimp.read(splashFileName)
-            .then((image) => {
-                var width = image.bitmap.width;
-                var height = image.bitmap.height;
-                if (width === 2732 && width === height) {
-                    display.success('Splash file ok (' + width + 'x' + height + ')');
-                    defer.resolve(image);
-                } else {
-                    display.error('Bad splash file (' + width + 'x' + height + ')');
-                    defer.reject('Bad image format');
-                }
-            })
-            .catch((err) => {
-                display.error('Could not load splash file');
-                defer.reject(err);
-            });
-
-        return defer.promise;
+      const result = sharp(splashFileName);
+      return result.metadata()
+      .then((image) => {
+        if (image.width === image.height && (image.format === 'svg' || image.width >= 2732)) {
+          result.__meta = image;
+          display.success('splash file ok (' + image.width + 'x' + image.height + ')');
+        } else {
+          display.error('Bad splash file (' + image.width + 'x' + image.height + ')');
+          throw new Error('Bad image format');
+        }
+        return result;
+      })
     }
 
 }
@@ -190,43 +216,31 @@ function generateForConfig(imageObj, settings, config) {
     var platformPath = path.join(settings.outputdirectory, config.path);
 
     var transformIcon = (definition) => {
-        var defer = Q.defer();
-        var image = imageObj.icon.clone();
+      var image = imageObj.icon;
 
-        var outputFilePath = path.join(platformPath, definition.name);
-
-        image.resize(definition.size, definition.size)
-            .write(outputFilePath,
-                (err) => {
-                    if (err) defer.reject(err);
-                    //display.info('Generated icon file for ' + outputFilePath);
-                    defer.resolve();
-                });
-
-        return defer.promise;
+      var outputFilePath = path.join(platformPath, definition.name);
+      var outDir = path.dirname(outputFilePath);
+      return fs.ensureDir(outDir).then(()=>{
+        return image.resize(definition.size, definition.size)
+        .toFile(outputFilePath);
+      })
     };
 
     var transformSplash = (definition) => {
-        var defer = Q.defer();
-        var image = imageObj.splash.clone();
+        var image = imageObj.splash;
 
-        var x = (image.bitmap.width - definition.width) / 2;
-        var y = (image.bitmap.height - definition.height) / 2;
+        var x = (image.__meta.width - definition.width) / 2;
+        var y = (image.__meta.height - definition.height) / 2;
         var width = definition.width;
         var height = definition.height;
 
         var outputFilePath = path.join(platformPath, definition.name);
-
-        image
-            .crop(x, y, width, height)
-            .write(outputFilePath,
-                (err) => {
-                    if (err) defer.reject(err);
-                    //display.info('Generated splash file for ' + outputFilePath);
-                    defer.resolve();
-                });
-
-        return defer.promise;
+        var outDir = path.dirname(outputFilePath);
+        return fs.ensureDir(outDir).then(()=>{
+          return image.resize(width, height)
+          .crop(sharp.strategy.entropy)
+          .toFile(outputFilePath)
+        })
     };
 
     return fs.ensureDir(platformPath)
@@ -294,8 +308,10 @@ function generate(imageObj, settings) {
 }
 
 function catchErrors(err) {
-    if (err)
-        console.log('Error: ', err);
+    if (err) {
+      console.log('Error: ', err.message);
+      process.exit(1);
+    }
 }
 
 // cli helper configuration
@@ -308,8 +324,8 @@ var pjson = require('./package.json');
 program
     .version(pjson.version)
     .description(pjson.description)
-    .option('-i, --icon [optional]', 'optional icon file path (default: ./resources/icon.png)')
-    .option('-s, --splash [optional]', 'optional splash file path (default: ./resources/splash.png)')
+    .option('-i, --icon [optional]', 'optional icon file path (default: ./resources/icon)')
+    .option('-s, --splash [optional]', 'optional splash file path (default: ./resources/splash)')
     .option('-p, --platforms [optional]', 'optional platform token comma separated list (default: all platforms processed)', processList)
     .option('-o, --outputdir [optional]', 'optional output directory (default: ./resources/)')
     .option('-I, --makeicon [optional]', 'option to process icon files only')
@@ -319,8 +335,8 @@ program
 // app settings and default values
 
 var g_settings = {
-    iconfile: program.icon || path.join('.', 'resources', 'icon.png'),
-    splashfile: program.splash || path.join('.', 'resources', 'splash.png'),
+    iconfile: program.icon || path.join('.', 'resources', 'icon'),
+    splashfile: program.splash || path.join('.', 'resources', 'splash'),
     platforms: program.platforms || undefined,
     outputdirectory: program.outputdir || path.join('.', 'resources'),
     makeicon: program.makeicon || (!program.makeicon && !program.makesplash) ? true : false,
