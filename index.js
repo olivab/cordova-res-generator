@@ -13,6 +13,16 @@ var _ = require('lodash');
 var Gauge = require("gauge");
 var sharp = require('sharp');
 
+const IMAGE_FORMATS = ['svg', 'webp', 'png', 'tif', 'tiff', 'dzi', 'szi', 'v', 'vips', 'jpg', 'jpeg'];
+
+function isSupportedFormat(aFileName) {
+  let vExt = path.extname(aFileName);
+  if (vExt && vExt.length >= 2) {
+    vExt = vExt.slice(1).toLowerCase();
+    return IMAGE_FORMATS.indexOf(vExt) !== -1;
+  }
+}
+
 // helpers
 
 var display = {
@@ -54,8 +64,40 @@ var g_selectedPlatforms = [];
 
 // app functions
 
+function getValidFileName(aFileName) {
+  var result;
+  var ext = path.extname(aFileName);
+  if (ext.length > 1) {
+    if (!isSupportedFormat(aFileName)) {
+      throw new Error(aFileName + ' is not supported image format!');
+    }
+    if (fs.existsSync(path.resolve(aFileName))) result = aFileName;
+  } else {
+    if (ext.length === 1) aFileName = aFileName.slice(0, aFileName.length-2);
+    for (let i = 0; i < IMAGE_FORMATS.length; i++) {
+      if (fs.existsSync(path.resolve(aFileName+'.'+IMAGE_FORMATS[i]))) {
+        result = aFileName+'.'+IMAGE_FORMATS[i];
+        break;
+      }
+    }
+  }
+  if (!result) throw new Error(aFileName + ' no such file.');
+  return result;
+}
+
 function check(settings) {
     display.header('Checking files and directories');
+
+    var vFile;
+    try {
+      vFile = getValidFileName(settings.iconfile);
+      settings.iconfile = vFile;
+
+      vFile = getValidFileName(settings.splashfile);
+      settings.splashfile = vFile;
+    } catch(err) {
+      catchErrors(err);
+    }
 
     return checkPlatforms(settings)
         .then((selPlatforms) => g_selectedPlatforms = selPlatforms)
@@ -266,8 +308,10 @@ function generate(imageObj, settings) {
 }
 
 function catchErrors(err) {
-    if (err)
-        console.log('Error: ', err);
+    if (err) {
+      console.log('Error: ', err.message);
+      process.exit(1);
+    }
 }
 
 // cli helper configuration
@@ -280,8 +324,8 @@ var pjson = require('./package.json');
 program
     .version(pjson.version)
     .description(pjson.description)
-    .option('-i, --icon [optional]', 'optional icon file path (default: ./resources/icon.png)')
-    .option('-s, --splash [optional]', 'optional splash file path (default: ./resources/splash.png)')
+    .option('-i, --icon [optional]', 'optional icon file path (default: ./resources/icon)')
+    .option('-s, --splash [optional]', 'optional splash file path (default: ./resources/splash)')
     .option('-p, --platforms [optional]', 'optional platform token comma separated list (default: all platforms processed)', processList)
     .option('-o, --outputdir [optional]', 'optional output directory (default: ./resources/)')
     .option('-I, --makeicon [optional]', 'option to process icon files only')
@@ -291,8 +335,8 @@ program
 // app settings and default values
 
 var g_settings = {
-    iconfile: program.icon || path.join('.', 'resources', 'icon.png'),
-    splashfile: program.splash || path.join('.', 'resources', 'splash.png'),
+    iconfile: program.icon || path.join('.', 'resources', 'icon'),
+    splashfile: program.splash || path.join('.', 'resources', 'splash'),
     platforms: program.platforms || undefined,
     outputdirectory: program.outputdir || path.join('.', 'resources'),
     makeicon: program.makeicon || (!program.makeicon && !program.makesplash) ? true : false,
