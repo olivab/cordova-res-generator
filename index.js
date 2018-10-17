@@ -20,11 +20,11 @@ var display = {
         console.log(str);
     },
     success: (str) => {
-        str = ' ' + 'V'.green + ' ' + str;
+        str = ' ' + '✓'.green + ' ' + str;
         console.log(str);
     },
     error: (str) => {
-        str = ' ' + 'X'.red + ' ' + str;
+        str = ' ' + '✗'.red + ' ' + str;
         console.log(str);
     },
     header: (str) => {
@@ -35,7 +35,7 @@ var display = {
 
 // app main variables and constants
 
-const PLATFORMS = {
+var PLATFORMS = {
     'android': {
         definitions: ['./platforms/icons/android', './platforms/splash/android']
     },
@@ -57,7 +57,8 @@ var g_selectedPlatforms = [];
 function check(settings) {
     display.header('Checking files and directories');
 
-    return checkPlatforms(settings)
+    return updatePlatforms(settings)
+        .then(() => checkPlatforms(settings))
         .then((selPlatforms) => g_selectedPlatforms = selPlatforms)
         .then(() => getImages(settings))
         .then((iobjs) => {
@@ -65,6 +66,24 @@ function check(settings) {
         })
         .then(() => checkOutPutDir(settings));
 
+}
+
+function updatePlatforms(settings) {
+    if (settings.configPath) {
+        for (var platform in PLATFORMS) {
+            var iconConfig = PLATFORMS[platform].definitions[0];
+            if (iconConfig) {
+                PLATFORMS[platform].definitions[0] = iconConfig.replace('./platforms', settings.configPath);
+            }
+            
+            var splashConfig = PLATFORMS[platform].definitions[1];
+            if (splashConfig) {
+                PLATFORMS[platform].definitions[1] = splashConfig.replace('./platforms', settings.configPath);
+            }
+        }
+    }
+
+    return Q.resolve(settings);
 }
 
 function checkPlatforms(settings) {
@@ -139,7 +158,7 @@ function getImages(settings) {
                 }
             })
             .catch((err) => {
-                display.error('Could not load icon file');
+                display.error('Could not load icon file: ' + iconFileName);
                 defer.reject(err);
             });
 
@@ -218,7 +237,8 @@ function generateForConfig(imageObj, settings, config) {
         var outputFilePath = path.join(platformPath, definition.name);
 
         image
-            .crop(x, y, width, height)
+            // .crop(x, y, width, height)
+            .cover(width, height)
             .write(outputFilePath,
                 (err) => {
                     if (err) defer.reject(err);
@@ -314,6 +334,7 @@ program
     .option('-o, --outputdir [optional]', 'optional output directory (default: ./resources/)')
     .option('-I, --makeicon [optional]', 'option to process icon files only')
     .option('-S, --makesplash [optional]', 'option to process splash files only')
+    .option('--configPath [optional]', 'option to change the default config path (default: ./platforms)')
     .parse(process.argv);
 
 // app settings and default values
@@ -324,7 +345,8 @@ var g_settings = {
     platforms: program.platforms || undefined,
     outputdirectory: program.outputdir || path.join('.', 'resources'),
     makeicon: program.makeicon || (!program.makeicon && !program.makesplash) ? true : false,
-    makesplash: program.makesplash || (!program.makeicon && !program.makesplash) ? true : false
+    makesplash: program.makesplash || (!program.makeicon && !program.makesplash) ? true : false,
+    configPath: program.configPath || undefined,
 };
 
 // app entry point
