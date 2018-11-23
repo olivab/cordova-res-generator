@@ -46,6 +46,7 @@ or
                                 (default: ./resources/)
     -I, --makeicon [optional]   option to process icon files only
     -S, --makesplash [optional] option to process splash files only
+    -R, --resize [optional]     option to resize splash screen source image before cropping
     -h, --help                  output usage information
 
 ---
