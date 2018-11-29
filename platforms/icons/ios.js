@@ -2,7 +2,8 @@ module.exports = {
     platform: 'ios',
     type: 'icon',
     path: 'ios/icon',
-    definitions: [{
+    definitions: [
+        {
             name: 'icon.png',
             size: 57,
             comment: 'Default icon (avoid Apple submit error ITMS-90032)'
@@ -100,6 +101,21 @@ module.exports = {
             name: 'icon-small@3x.png',
             size: 87,
             comment: 'iPhone Spotlight and Settings Icon'
+        },
+        {
+            name: 'icon-1024.png',
+            size: 1024,
+            comment: 'iOS, App Store Icon'
+        },
+        {
+            name: 'icon-20.png',
+            size: 20,
+            comment: 'iOS 7-12, iPad Notifications'
+        },
+        {
+            name: 'icon-44@2x.png',
+            size: 88,
+            comment: 'Unassigned'
         }
     ]
 };
