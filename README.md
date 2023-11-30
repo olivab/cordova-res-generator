@@ -1,5 +1,9 @@
 # cordova-res-generator
 
+## Archived
+
+This project is archived as of December 2023.
+
 ## Introduction
 
 Automatic icon and splash screen resizing CLI tool for **Cordova**/**Ionic**/**PhoneGap** based applications.
