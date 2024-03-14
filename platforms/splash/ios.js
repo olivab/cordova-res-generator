@@ -2,7 +2,8 @@ module.exports = {
     platform: 'ios',
     type: 'splash',
     path: 'ios/splash/',
-    definitions: [{
+    definitions: [
+        {
             name: "Default-568h@2x~iphone.png",
             width: 640,
             height: 1136,
@@ -73,6 +74,18 @@ module.exports = {
             width: 320,
             height: 480,
             comment: ''
-        } // iPhone
+        }, // iPhone
+        {
+            name: "Default-Portrait~iphonex.png",
+            width: 1125,
+            height: 2436,
+            comment: 'iPhoneX Portrait size'
+        },
+        {
+            name: "Default-Landscape~iphonex.png",
+            width: 2436,
+            height: 1125,
+            comment: 'iPhoneX Landscape size'
+        }
     ]
 };
